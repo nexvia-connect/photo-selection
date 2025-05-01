@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GIRAFFE360 Photo Selector</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <button id="selectTab">Select photos</button>
+    <button id="orderTab">Order photos</button>
+  </nav>
+
+  <section id="selectSection" class="active">
+    <div id="photoGrid" class="photo-grid"></div>
+    <div id="modal" class="modal">
+      <span id="modalClose">&times;</span>
+      <img id="modalImg" />
+    </div>
+  </section>
+
+  <section id="orderSection">
+    <ul id="orderList"></ul>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
