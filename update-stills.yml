@@ -1,0 +1,31 @@
+name: Update Giraffe Data
+on:
+  schedule:
+    - cron: '0 * * * *'   # every hour
+  workflow_dispatch:
+
+jobs:
+  fetch-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fetch still_photos for ${{ github.event.inputs.GIRAFFEID || 'ALL_IDS' }}
+        run: |
+          mkdir -p data
+          # if you have a fixed list of IDs, loop them; 
+          # or accept a workflow_dispatch input GIRAFFEID
+          for ID in 697071685d384b3fa71fecab0676fc33; do
+            curl -s \
+              -H "Authorization: Token ${{ secrets.GH_PAT }}" \
+              "https://api.giraffe360.com/api/v2/projects/$ID/" \
+              | jq '.still_photos' > data/$ID.json
+          done
+
+      - name: Commit updated JSON
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Update Giraffe still_photos
+          file_pattern: data/
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
