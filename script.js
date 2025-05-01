@@ -1,6 +1,5 @@
-let authKey = 'c4d3f5da2388d568461efabda2ca21df';
-let githubOwner = 'YOUR_GITHUB_USERNAME';
-let githubRepo = 'YOUR_REPO_NAME';
+let githubOwner = 'nexvia-connect';
+let githubRepo  = 'photo-selection';
 let githubToken = 'YOUR_GITHUB_TOKEN';
 
 const params = new URLSearchParams(window.location.search);
@@ -16,18 +15,16 @@ document.getElementById('modalClose').addEventListener('click', () => {
 });
 
 function switchTab(tab) {
-  document.getElementById('selectSection').classList.toggle('active', tab==='select');
-  document.getElementById('orderSection').classList.toggle('active', tab==='order');
-  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.id===tab+'Tab'));
-  if (tab==='order') renderOrder();
+  document.getElementById('selectSection').classList.toggle('active', tab === 'select');
+  document.getElementById('orderSection').classList.toggle('active', tab === 'order');
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.id === tab + 'Tab'));
+  if (tab === 'order') renderOrder();
 }
 
-fetch(`https://api.giraffe360.com/api/v2/projects/${giraffeId}/`, {
-  headers: { 'Authorization': `Token ${authKey}` }
-})
+fetch(`data/${giraffeId}.json`)
   .then(r => r.json())
   .then(data => {
-    photos = data.still_photos;
+    photos = data;
     loadSaved();
     renderGrid();
   });
@@ -61,7 +58,7 @@ function renderOrder() {
   const list = document.getElementById('orderList');
   list.innerHTML = '';
   selected.forEach(id => {
-    const p = photos.find(x => x.id===id);
+    const p = photos.find(x => x.id === id);
     const li = document.createElement('li');
     const img = document.createElement('img');
     img.src = p.url;
@@ -72,7 +69,7 @@ function renderOrder() {
     onEnd: () => {
       selected = Array.from(list.children).map(li => {
         const src = li.querySelector('img').src;
-        return photos.find(p => p.url===src).id;
+        return photos.find(p => p.url === src).id;
       });
       save();
     }
@@ -81,39 +78,35 @@ function renderOrder() {
 
 function save() {
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(selected))));
-  const path = `data/${giraffeId}.json`;
+  const path = `data/${giraffeId}-selection.json`;
   fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}`, {
     headers: { 'Authorization': `token ${githubToken}` }
   })
-  .then(r => r.json())
-  .then(res => {
-    const sha = res.sha;
-    return fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${githubToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: `Update giraffe ${giraffeId}`,
-        content: content,
-        sha: sha
-      })
+    .then(r => r.json())
+    .then(res => {
+      const sha = res.sha;
+      return fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Update selection for ${giraffeId}`,
+          content: content,
+          sha: sha
+        })
+      });
     });
-  });
 }
 
 function loadSaved() {
-  const path = `data/${giraffeId}.json`;
+  const path = `data/${giraffeId}-selection.json`;
   fetch(`https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${path}`)
-    .then(r => {
-      if (!r.ok) return { content: null };
-      return r.json();
-    })
+    .then(r => r.ok ? r.json() : { content: null })
     .then(res => {
       if (res.content) {
-        const data = decodeURIComponent(escape(atob(res.content)));
-        selected = JSON.parse(data);
+        selected = JSON.parse(decodeURIComponent(escape(atob(res.content))));
       }
       renderGrid();
     });
